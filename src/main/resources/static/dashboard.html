@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MFA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .user-info p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .mfa-section {
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .mfa-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .mfa-enabled {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .mfa-disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #4285f4;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #357ae8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .qr-container {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-container.show {
+            display: block;
+        }
+
+        .qr-code {
+            max-width: 300px;
+            margin: 20px auto;
+            border: 3px solid #4285f4;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+            display: block;
+        }
+
+        input[type="text"] {
+            width: 200px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 5px;
+            margin: 10px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .secret-key {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px auto;
+            max-width: 400px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .instructions li {
+            margin: 8px 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .logout-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .logout-btn:hover {
+            background: #5a6268;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1>Dashboard</h1>
+
+        <div class="user-info" id="userInfo">
+            <p><strong>Email:</strong> <span id="userEmail">Cargando...</span></p>
+            <p><strong>Nombre:</strong> <span id="userName">Cargando...</span></p>
+        </div>
+
+        <button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
+
+        <div class="mfa-section">
+            <h2>Autenticación de Dos Factores (MFA)</h2>
+
+            <div id="loadingMfa" class="loading">
+                Cargando estado de MFA...
+            </div>
+
+            <div id="mfaContent" class="hidden">
+                <div id="mfaStatus">
+                    <span class="mfa-status mfa-disabled">MFA Desactivado</span>
+                </div>
+
+                <div id="mfaDisabled">
+                    <p style="margin: 15px 0; color: #666;">
+                        Agrega una capa extra de seguridad a tu cuenta activando la autenticación de dos factores.
+                    </p>
+                    <button onclick="setupMFA()" class="btn-primary" id="btnSetup">Activar MFA</button>
+                </div>
+
+                <div id="mfaSetup" class="hidden">
+                    <div class="instructions">
+                        <strong>Pasos para configurar MFA:</strong>
+                        <ol>
+                            <li>Descarga Google Authenticator en tu teléfono</li>
+                            <li>Abre la app y toca el botón "+"</li>
+                            <li>Selecciona "Escanear código QR"</li>
+                            <li>Escanea el código QR de abajo</li>
+                            <li>Ingresa el código de 6 dígitos que aparece</li>
+                        </ol>
+                    </div>
+
+                    <div class="qr-container" id="qrContainer">
+                        <h3>Escanea este código QR:</h3>
+                        <img id="qrCode" class="qr-code" alt="QR Code">
+
+                        <p style="margin-top: 15px;"><strong>O ingresa esta clave manualmente:</strong></p>
+                        <div class="secret-key" id="secretKey"></div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <input type="text" id="verificationCode" placeholder="000000" maxlength="6" pattern="[0-9]*">
+                        <br>
+                        <button onclick="verifyMFA()" class="btn-success" id="btnVerify">Verificar y Activar</button>
+                        <button onclick="cancelSetup()" class="btn-danger">Cancelar</button>
+                    </div>
+                </div>
+
+                <div id="mfaEnabled" class="hidden">
+                    <p style="margin: 15px 0; color: #666;">
+                        Tu cuenta está protegida con autenticación de dos factores.
+                    </p>
+                    <button onclick="disableMFA()" class="btn-danger" id="btnDisable">Desactivar MFA</button>
+                </div>
+            </div>
+
+            <div id="messageContainer"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let userEmail = '';
+
+    window.addEventListener('load', async function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (token) {
+            localStorage.setItem('jwt_token', token);
+            window.history.replaceState({}, document.title, "/dashboard.html");
+        }
+
+        const savedToken = localStorage.getItem('jwt_token');
+        if (!savedToken) {
+            window.location.href = '/login.html';
+            return;
+        }
+
+        try {
+            const payload = JSON.parse(atob(savedToken.split('.')[1]));
+            userEmail = payload.sub;
+
+            document.getElementById('userEmail').textContent = userEmail;
+            document.getElementById('userName').textContent = 'Usuario';
+
+            // Cargar estado de MFA
+            await loadMfaStatus();
+
+        } catch (e) {
+            console.error('Error al decodificar token:', e);
+            logout();
+        }
+    });
+
+    async function loadMfaStatus() {
+        try {
+            const response = await fetch(`/api/auth/mfa/status?email=${encodeURIComponent(userEmail)}`, {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                document.getElementById('loadingMfa').classList.add('hidden');
+                document.getElementById('mfaContent').classList.remove('hidden');
+
+                if (data.mfaEnabled) {
+                    document.getElementById('mfaDisabled').classList.add('hidden');
+                    document.getElementById('mfaEnabled').classList.remove('hidden');
+                    document.getElementById('mfaStatus').innerHTML = '<span class="mfa-status mfa-enabled">✓ MFA Activado</span>';
+                } else {
+                    document.getElementById('mfaDisabled').classList.remove('hidden');
+                    document.getElementById('mfaEnabled').classList.add('hidden');
+                    document.getElementById('mfaStatus').innerHTML = '<span class="mfa-status mfa-disabled">✗ MFA Desactivado</span>';
+                }
+            } else {
+                throw new Error('Error al cargar estado de MFA');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('loadingMfa').textContent = 'Error al cargar estado de MFA';
+        }
+    }
+
+    async function setupMFA() {
+        const btn = document.getElementById('btnSetup');
+        btn.disabled = true;
+        btn.textContent = 'Configurando...';
+
+        try {
+            const response = await fetch(`/api/auth/mfa/setup?email=${encodeURIComponent(userEmail)}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al configurar MFA');
+            }
+
+            const data = await response.json();
+
+            console.log('QR Code URL:', data.qrCodeUrl.substring(0, 50) + '...');
+
+            // Establecer la imagen del QR
+            const qrImage = document.getElementById('qrCode');
+            qrImage.src = data.qrCodeUrl;
+            qrImage.onerror = function() {
+                showMessage('Error al cargar el código QR. Usa la clave manual.', 'error');
+            };
+
+            document.getElementById('secretKey').textContent = data.secret;
+            document.getElementById('qrContainer').classList.add('show');
+
+            document.getElementById('mfaDisabled').classList.add('hidden');
+            document.getElementById('mfaSetup').classList.remove('hidden');
+
+            showMessage('Escanea el código QR con Google Authenticator', 'success');
+        } catch (error) {
+            showMessage('Error al configurar MFA: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Activar MFA';
+        }
+    }
+
+    async function verifyMFA() {
+        const code = document.getElementById('verificationCode').value;
+
+        if (code.length !== 6) {
+            showMessage('El código debe tener 6 dígitos', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btnVerify');
+        btn.disabled = true;
+        btn.textContent = 'Verificando...';
+
+        try {
+            const response = await fetch('/api/auth/mfa/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                },
+                body: JSON.stringify({
+                    email: userEmail,
+                    code: code
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Código inválido');
+            }
+
+            const data = await response.json();
+
+            showMessage('¡MFA activado correctamente!', 'success');
+
+            // Actualizar token si se proporciona
+            if (data.token) {
+                localStorage.setItem('jwt_token', data.token);
+            }
+
+            // Actualizar UI
+            document.getElementById('mfaSetup').classList.add('hidden');
+            document.getElementById('mfaEnabled').classList.remove('hidden');
+            document.getElementById('mfaStatus').innerHTML = '<span class="mfa-status mfa-enabled">✓ MFA Activado</span>';
+            document.getElementById('verificationCode').value = '';
+
+        } catch (error) {
+            showMessage('Error: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Verificar y Activar';
+            document.getElementById('verificationCode').value = '';
+            document.getElementById('verificationCode').focus();
+        }
+    }
+
+    async function disableMFA() {
+        if (!confirm('¿Estás seguro de que quieres desactivar MFA? Tu cuenta será menos segura.')) {
+            return;
+        }
+
+        const btn = document.getElementById('btnDisable');
+        btn.disabled = true;
+        btn.textContent = 'Desactivando...';
+
+        try {
+            const response = await fetch(`/api/auth/mfa/disable?email=${encodeURIComponent(userEmail)}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al desactivar MFA');
+            }
+
+            showMessage('MFA desactivado correctamente', 'success');
+
+            document.getElementById('mfaEnabled').classList.add('hidden');
+            document.getElementById('mfaDisabled').classList.remove('hidden');
+            document.getElementById('mfaStatus').innerHTML = '<span class="mfa-status mfa-disabled">✗ MFA Desactivado</span>';
+
+            document.getElementById('btnSetup').disabled = false;
+            document.getElementById('btnSetup').textContent = 'Activar MFA';
+
+        } catch (error) {
+            showMessage('Error: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Desactivar MFA';
+        }
+    }
+
+    function cancelSetup() {
+        document.getElementById('mfaSetup').classList.add('hidden');
+        document.getElementById('mfaDisabled').classList.remove('hidden');
+        document.getElementById('verificationCode').value = '';
+        document.getElementById('btnSetup').disabled = false;
+        document.getElementById('btnSetup').textContent = 'Activar MFA';
+        showMessage('Configuración cancelada', 'error');
+    }
+
+    function logout() {
+        localStorage.removeItem('jwt_token');
+        window.location.href = '/login.html';
+    }
+
+    function showMessage(message, type) {
+        const container = document.getElementById('messageContainer');
+        container.innerHTML = `<div class="message ${type}">${message}</div>`;
+
+        setTimeout(() => {
+            container.innerHTML = '';
+        }, 5000);
+    }
+
+    document.getElementById('verificationCode')?.addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+</script>
+</body>
+</html>

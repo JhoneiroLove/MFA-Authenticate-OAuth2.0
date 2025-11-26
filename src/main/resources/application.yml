@@ -1,0 +1,44 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mfa_auth_db
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 1094437668544-22oftua5c799ir14epnk062jfrmbutdf.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - profile
+          github:
+            client-id: Ov23li5JRger93KRcYKm
+            client-secret: da25084e6832df275a2b2e2a70fd611375ab5eb5
+            scope:
+              - user:email
+              - read:user
+          facebook:
+            client-id: 1153035177030098
+            client-secret: a2b3b9fbdf6265f7b3089a495bb16900
+            scope:
+              - email
+              - public_profile
+
+app:
+  jwt:
+    secret: your-256-bit-secret-key-change-this-in-production-minimum-32-characters
+    expiration: 86400000
+
+mfa:
+  issuer: MFA-Authenticate-App

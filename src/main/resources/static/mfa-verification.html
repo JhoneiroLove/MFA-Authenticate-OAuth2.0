@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificación MFA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .shield-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 10px;
+            margin: 20px 0;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+        }
+
+        .btn-primary {
+            background: #4285f4;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #357ae8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background: #f0f7ff;
+            border-left: 4px solid #4285f4;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="shield-icon">🔒</div>
+    <h1>Verificación MFA</h1>
+    <p class="subtitle">Ingresa el código de Google Authenticator</p>
+
+    <input
+            type="text"
+            id="mfaCode"
+            placeholder="000000"
+            maxlength="6"
+            pattern="[0-9]*"
+            autofocus
+    >
+
+    <button onclick="verifyCode()" class="btn-primary">Verificar</button>
+    <button onclick="goBack()" class="btn-secondary">Cancelar</button>
+
+    <div id="messageContainer"></div>
+
+    <div class="info">
+        <strong>Nota:</strong> Abre Google Authenticator en tu teléfono e ingresa el código de 6 dígitos.
+    </div>
+</div>
+
+<script>
+    let userEmail = '';
+
+    window.addEventListener('load', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        userEmail = urlParams.get('email');
+
+        if (!userEmail) {
+            window.location.href = '/login.html';
+        }
+    });
+
+    async function verifyCode() {
+        const code = document.getElementById('mfaCode').value;
+
+        if (code.length !== 6) {
+            showMessage('El código debe tener 6 dígitos');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/auth/mfa/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: userEmail,
+                    code: code
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Código inválido');
+            }
+
+            const data = await response.json();
+
+            localStorage.setItem('jwt_token', data.token);
+            window.location.href = '/dashboard.html?token=' + data.token;
+
+        } catch (error) {
+            showMessage('Código inválido. Intenta de nuevo.');
+            document.getElementById('mfaCode').value = '';
+            document.getElementById('mfaCode').focus();
+        }
+    }
+
+    function goBack() {
+        window.location.href = '/login.html';
+    }
+
+    function showMessage(message) {
+        const container = document.getElementById('messageContainer');
+        container.innerHTML = `<div class="message error">${message}</div>`;
+
+        setTimeout(() => {
+            container.innerHTML = '';
+        }, 3000);
+    }
+
+    document.getElementById('mfaCode').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value.length === 6) {
+            verifyCode();
+        }
+    });
+
+    document.getElementById('mfaCode').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            verifyCode();
+        }
+    });
+</script>
+</body>
+</html>
