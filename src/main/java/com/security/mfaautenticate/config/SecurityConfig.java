@@ -25,11 +25,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/rbac/**",
                                 "/oauth2/**",
                                 "/login/**",
                                 "/login.html",
                                 "/dashboard.html",
                                 "/mfa-verification.html",
+                                "/rbac-admin.html",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()

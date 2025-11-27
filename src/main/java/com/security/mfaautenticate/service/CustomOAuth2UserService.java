@@ -1,7 +1,9 @@
 package com.security.mfaautenticate.service;
 
 import com.security.mfaautenticate.entity.OAuthProvider;
+import com.security.mfaautenticate.entity.Role;
 import com.security.mfaautenticate.entity.User;
+import com.security.mfaautenticate.repository.RoleRepository;
 import com.security.mfaautenticate.repository.UserRepository;
 import com.security.mfaautenticate.security.CustomOAuth2User;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import java.util.Optional;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -73,6 +76,19 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             user = userBuilder.build();
             user = userRepository.save(user);
             log.info("Usuario creado: {} con MFA: {}", user.getEmail(), user.isMfaEnabled());
+
+            // Asignar rol ADMIN al primer usuario
+            long totalUsers = userRepository.count();
+            if (totalUsers == 1) {
+                Optional<Role> adminRole = roleRepository.findByName("ADMIN");
+                if (adminRole.isPresent()) {
+                    user.getRoles().add(adminRole.get());
+                    user = userRepository.save(user);
+                    log.info("Primer usuario registrado - Rol ADMIN asignado a: {}", user.getEmail());
+                } else {
+                    log.warn("Rol ADMIN no encontrado en la base de datos");
+                }
+            }
         } else {
             user = userOptional.get();
             log.info("Usuario existente: {} con MFA: {}", user.getEmail(), user.isMfaEnabled());

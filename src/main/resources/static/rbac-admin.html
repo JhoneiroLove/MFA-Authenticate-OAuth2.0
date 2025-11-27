@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración RBAC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .header button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .header button:hover {
+            background: #5568d3;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button.danger {
+            background: #e74c3c;
+        }
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+        }
+
+        .badge.create { background: #3498db; color: white; }
+        .badge.read { background: #2ecc71; color: white; }
+        .badge.update { background: #f39c12; color: white; }
+        .badge.delete { background: #e74c3c; color: white; }
+
+        .message {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close {
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Administración RBAC</h1>
+                <p style="color: #666;">Role-Based Access Control</p>
+            </div>
+            <button onclick="window.location.href='/dashboard.html'">Volver al Dashboard</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('roles')">Roles</button>
+            <button class="tab" onclick="switchTab('resources')">Recursos</button>
+            <button class="tab" onclick="switchTab('permissions')">Permisos</button>
+            <button class="tab" onclick="switchTab('users')">Usuarios</button>
+        </div>
+
+        <div id="roles-tab" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h3>Crear Rol</h3>
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" id="roleName" placeholder="ej: MANAGER">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción:</label>
+                        <textarea id="roleDescription" placeholder="Descripción del rol"></textarea>
+                    </div>
+                    <button onclick="createRole()">Crear Rol</button>
+                </div>
+            </div>
+            <div id="rolesList"></div>
+        </div>
+
+        <div id="resources-tab" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>Crear Recurso</h3>
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" id="resourceName" placeholder="ej: Users Module">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción:</label>
+                        <textarea id="resourceDescription" placeholder="Descripción del recurso"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Ruta:</label>
+                        <input type="text" id="resourcePath" placeholder="ej: /api/users">
+                    </div>
+                    <button onclick="createResource()">Crear Recurso</button>
+                </div>
+            </div>
+            <div id="resourcesList"></div>
+        </div>
+
+        <div id="permissions-tab" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>Crear Permiso</h3>
+                    <div class="form-group">
+                        <label>Recurso:</label>
+                        <select id="permissionResource"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Operación:</label>
+                        <select id="permissionOperation">
+                            <option value="CREATE">CREATE</option>
+                            <option value="READ">READ</option>
+                            <option value="UPDATE">UPDATE</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                    </div>
+                    <button onclick="createPermission()">Crear Permiso</button>
+                </div>
+            </div>
+            <div id="permissionsList"></div>
+        </div>
+
+        <div id="users-tab" class="tab-content">
+            <div id="usersList"></div>
+        </div>
+    </div>
+
+    <div id="assignModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Asignar Permisos</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/rbac';
+        let currentData = {
+            roles: [],
+            resources: [],
+            permissions: [],
+            users: []
+        };
+
+        function getToken() {
+            return localStorage.getItem('jwtToken');
+        }
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                }
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            const response = await fetch(`${API_BASE}${endpoint}`, options);
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Error en la petición');
+            }
+            return response.json();
+        }
+
+        function showMessage(text, type = 'success') {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message ${type}`;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 5000);
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            loadData();
+        }
+
+        async function createRole() {
+            try {
+                const name = document.getElementById('roleName').value;
+                const description = document.getElementById('roleDescription').value;
+
+                await apiCall('/roles', 'POST', { name, description });
+                showMessage('Rol creado exitosamente');
+
+                document.getElementById('roleName').value = '';
+                document.getElementById('roleDescription').value = '';
+                loadData();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function createResource() {
+            try {
+                const name = document.getElementById('resourceName').value;
+                const description = document.getElementById('resourceDescription').value;
+                const path = document.getElementById('resourcePath').value;
+
+                await apiCall('/resources', 'POST', { name, description, path });
+                showMessage('Recurso creado exitosamente');
+
+                document.getElementById('resourceName').value = '';
+                document.getElementById('resourceDescription').value = '';
+                document.getElementById('resourcePath').value = '';
+                loadData();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function createPermission() {
+            try {
+                const resourceId = document.getElementById('permissionResource').value;
+                const operation = document.getElementById('permissionOperation').value;
+
+                await apiCall('/permissions', 'POST', { resourceId, operation });
+                showMessage('Permiso creado exitosamente');
+                loadData();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function deleteRole(id) {
+            if (!confirm('¿Está seguro de eliminar este rol?')) return;
+
+            try {
+                await apiCall(`/roles/${id}`, 'DELETE');
+                showMessage('Rol eliminado exitosamente');
+                loadData();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function deleteResource(id) {
+            if (!confirm('¿Está seguro de eliminar este recurso?')) return;
+
+            try {
+                await apiCall(`/resources/${id}`, 'DELETE');
+                showMessage('Recurso eliminado exitosamente');
+                loadData();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function deletePermission(id) {
+            if (!confirm('¿Está seguro de eliminar este permiso?')) return;
+
+            try {
+                await apiCall(`/permissions/${id}`, 'DELETE');
+                showMessage('Permiso eliminado exitosamente');
+                loadData();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        function showAssignPermissionsModal(roleId) {
+            const role = currentData.roles.find(r => r.id === roleId);
+            const modal = document.getElementById('assignModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = `Asignar Permisos a ${role.name}`;
+
+            let html = '<div>';
+            currentData.permissions.forEach(perm => {
+                const hasPermission = role.permissions.some(p => p.id === perm.id);
+                html += `
+                    <div style="margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>${perm.resource.name} - ${perm.operation}</span>
+                        <button onclick="${hasPermission ? `removePermissionFromRole(${roleId}, ${perm.id})` : `assignPermissionToRole(${roleId}, ${perm.id})`}">
+                            ${hasPermission ? 'Quitar' : 'Asignar'}
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            modalBody.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function showAssignRolesModal(userId) {
+            const user = currentData.users.find(u => u.id === userId);
+            const modal = document.getElementById('assignModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = `Asignar Roles a ${user.email}`;
+
+            let html = '<div>';
+            currentData.roles.forEach(role => {
+                const hasRole = user.roles.some(r => r.id === role.id);
+                html += `
+                    <div style="margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>${role.name}</span>
+                        <button onclick="${hasRole ? `removeRoleFromUser(${userId}, ${role.id})` : `assignRoleToUser(${userId}, ${role.id})`}">
+                            ${hasRole ? 'Quitar' : 'Asignar'}
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            modalBody.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('assignModal').classList.remove('active');
+        }
+
+        async function assignPermissionToRole(roleId, permissionId) {
+            try {
+                await apiCall(`/roles/${roleId}/permissions/${permissionId}`, 'POST');
+                showMessage('Permiso asignado exitosamente');
+                await loadData();
+                closeModal();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function removePermissionFromRole(roleId, permissionId) {
+            try {
+                await apiCall(`/roles/${roleId}/permissions/${permissionId}`, 'DELETE');
+                showMessage('Permiso removido exitosamente');
+                await loadData();
+                closeModal();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function assignRoleToUser(userId, roleId) {
+            try {
+                await apiCall(`/users/${userId}/roles/${roleId}`, 'POST');
+                showMessage('Rol asignado exitosamente');
+                await loadData();
+                closeModal();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function removeRoleFromUser(userId, roleId) {
+            try {
+                await apiCall(`/users/${userId}/roles/${roleId}`, 'DELETE');
+                showMessage('Rol removido exitosamente');
+                await loadData();
+                closeModal();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        function renderRoles() {
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Permisos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${currentData.roles.map(role => `
+                            <tr>
+                                <td>${role.id}</td>
+                                <td><strong>${role.name}</strong></td>
+                                <td>${role.description || '-'}</td>
+                                <td>${role.permissions.length} permisos</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button onclick="showAssignPermissionsModal(${role.id})">Permisos</button>
+                                        <button class="danger" onclick="deleteRole(${role.id})">Eliminar</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('rolesList').innerHTML = html;
+        }
+
+        function renderResources() {
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Ruta</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${currentData.resources.map(resource => `
+                            <tr>
+                                <td>${resource.id}</td>
+                                <td><strong>${resource.name}</strong></td>
+                                <td>${resource.description || '-'}</td>
+                                <td><code>${resource.path}</code></td>
+                                <td>
+                                    <button class="danger" onclick="deleteResource(${resource.id})">Eliminar</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('resourcesList').innerHTML = html;
+        }
+
+        function renderPermissions() {
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Recurso</th>
+                            <th>Operación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${currentData.permissions.map(perm => `
+                            <tr>
+                                <td>${perm.id}</td>
+                                <td>${perm.resource.name} (${perm.resource.path})</td>
+                                <td><span class="badge ${perm.operation.toLowerCase()}">${perm.operation}</span></td>
+                                <td>
+                                    <button class="danger" onclick="deletePermission(${perm.id})">Eliminar</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('permissionsList').innerHTML = html;
+        }
+
+        function renderUsers() {
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Nombre</th>
+                            <th>Provider</th>
+                            <th>Roles</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${currentData.users.map(user => `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.email}</td>
+                                <td>${user.name || '-'}</td>
+                                <td>${user.oauthProvider}</td>
+                                <td>${user.roles.map(r => r.name).join(', ') || 'Sin roles'}</td>
+                                <td>
+                                    <button onclick="showAssignRolesModal(${user.id})">Asignar Roles</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('usersList').innerHTML = html;
+        }
+
+        function updateResourceSelect() {
+            const select = document.getElementById('permissionResource');
+            select.innerHTML = currentData.resources.map(r =>
+                `<option value="${r.id}">${r.name} (${r.path})</option>`
+            ).join('');
+        }
+
+        async function loadData() {
+            try {
+                const [roles, resources, permissions, users] = await Promise.all([
+                    apiCall('/roles'),
+                    apiCall('/resources'),
+                    apiCall('/permissions'),
+                    apiCall('/users')
+                ]);
+
+                currentData = { roles, resources, permissions, users };
+
+                renderRoles();
+                renderResources();
+                renderPermissions();
+                renderUsers();
+                updateResourceSelect();
+            } catch (error) {
+                showMessage('Error cargando datos: ' + error.message, 'error');
+            }
+        }
+
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('assignModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        loadData();
+    </script>
+</body>
+</html>
