@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,15 +58,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     .oauthProvider(provider)
                     .oauthId(oauthId);
 
-            // Si hay otros usuarios con el mismo email, heredar su configuración de MFA
+            // Si hay otros usuarios con el mismo email, heredar su configuración de MFA y roles
             if (!existingUsers.isEmpty()) {
                 User existingUser = existingUsers.get(0);
-                log.info("Usuario existente encontrado con email: {}. Heredando configuración MFA.", email);
+                log.info("Usuario existente encontrado con email: {}. Heredando configuración MFA y roles.", email);
 
                 userBuilder
                         .mfaEnabled(existingUser.isMfaEnabled())
                         .usingMfa(existingUser.isUsingMfa())
-                        .mfaSecret(existingUser.getMfaSecret());
+                        .mfaSecret(existingUser.getMfaSecret())
+                        .roles(new HashSet<>(existingUser.getRoles())); // Heredar roles
             } else {
                 log.info("Nuevo usuario sin configuración MFA previa");
                 userBuilder
@@ -74,20 +76,28 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
 
             user = userBuilder.build();
-            user = userRepository.save(user);
-            log.info("Usuario creado: {} con MFA: {}", user.getEmail(), user.isMfaEnabled());
 
-            // Asignar rol ADMIN al primer usuario
+            // Asignar rol por defecto si no tiene roles (usuario completamente nuevo)
+            if (user.getRoles().isEmpty()) {
+                Role defaultRole = roleRepository.findByName("USER")
+                        .orElseThrow(() -> new RuntimeException("Rol USER no encontrado"));
+                user.getRoles().add(defaultRole);
+                log.info("Rol USER asignado al nuevo usuario: {}", user.getEmail());
+            }
+
+            user = userRepository.save(user);
+            log.info("Usuario creado: {} con roles: {}", user.getEmail(),
+                    user.getRoles().stream().map(Role::getName).toList());
+
+            // Asignar rol ADMIN al primer usuario del sistema
             long totalUsers = userRepository.count();
             if (totalUsers == 1) {
-                Optional<Role> adminRole = roleRepository.findByName("ADMIN");
-                if (adminRole.isPresent()) {
-                    user.getRoles().add(adminRole.get());
-                    user = userRepository.save(user);
-                    log.info("Primer usuario registrado - Rol ADMIN asignado a: {}", user.getEmail());
-                } else {
-                    log.warn("Rol ADMIN no encontrado en la base de datos");
-                }
+                Role adminRole = roleRepository.findByName("ADMIN")
+                        .orElseThrow(() -> new RuntimeException("Rol ADMIN no encontrado"));
+                user.getRoles().clear();
+                user.getRoles().add(adminRole);
+                user = userRepository.save(user);
+                log.info("Primer usuario registrado - Rol ADMIN asignado a: {}", user.getEmail());
             }
         } else {
             user = userOptional.get();

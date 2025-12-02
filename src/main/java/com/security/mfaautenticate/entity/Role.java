@@ -1,5 +1,7 @@
 package com.security.mfaautenticate.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,6 +27,7 @@ public class Role {
 
     private String description;
 
+    @JsonManagedReference("role-permissions")
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "role_permissions",
@@ -33,6 +36,7 @@ public class Role {
     )
     private Set<Permission> permissions = new HashSet<>();
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "roles")
     private Set<User> users = new HashSet<>();
 }

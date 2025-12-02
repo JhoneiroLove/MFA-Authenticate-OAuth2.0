@@ -290,12 +290,12 @@
                 <div class="card">
                     <h3>Crear Rol</h3>
                     <div class="form-group">
-                        <label>Nombre:</label>
-                        <input type="text" id="roleName" placeholder="ej: MANAGER">
+                        <label>Nombre del Rol:</label>
+                        <input type="text" id="roleName" placeholder="Ej: MANAGER, VENDEDOR, CONTADOR">
                     </div>
                     <div class="form-group">
                         <label>Descripción:</label>
-                        <textarea id="roleDescription" placeholder="Descripción del rol"></textarea>
+                        <textarea id="roleDescription" placeholder="Describe las responsabilidades de este rol"></textarea>
                     </div>
                     <button onclick="createRole()">Crear Rol</button>
                 </div>
@@ -308,16 +308,17 @@
                 <div class="card">
                     <h3>Crear Recurso</h3>
                     <div class="form-group">
-                        <label>Nombre:</label>
-                        <input type="text" id="resourceName" placeholder="ej: Users Module">
+                        <label>Nombre del Recurso:</label>
+                        <input type="text" id="resourceName" placeholder="Ej: Productos, Usuarios, Documentos">
                     </div>
                     <div class="form-group">
                         <label>Descripción:</label>
-                        <textarea id="resourceDescription" placeholder="Descripción del recurso"></textarea>
+                        <textarea id="resourceDescription" placeholder="Describe esta entidad de negocio (ej: Gestión de productos del catálogo)"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Ruta:</label>
-                        <input type="text" id="resourcePath" placeholder="ej: /api/users">
+                        <label>Identificador/Path (Opcional):</label>
+                        <input type="text" id="resourcePath" placeholder="Ej: products, users, documents (solo identificador)">
+                        <small style="color: #666; display: block; margin-top: 5px;">Identificador único para referencia interna</small>
                     </div>
                     <button onclick="createResource()">Crear Recurso</button>
                 </div>
@@ -330,16 +331,16 @@
                 <div class="card">
                     <h3>Crear Permiso</h3>
                     <div class="form-group">
-                        <label>Recurso:</label>
+                        <label>Recurso (Entidad):</label>
                         <select id="permissionResource"></select>
                     </div>
                     <div class="form-group">
                         <label>Operación:</label>
                         <select id="permissionOperation">
-                            <option value="CREATE">CREATE</option>
-                            <option value="READ">READ</option>
-                            <option value="UPDATE">UPDATE</option>
-                            <option value="DELETE">DELETE</option>
+                            <option value="CREATE">CREATE (Crear)</option>
+                            <option value="READ">READ (Leer/Ver)</option>
+                            <option value="UPDATE">UPDATE (Actualizar)</option>
+                            <option value="DELETE">DELETE (Eliminar)</option>
                         </select>
                     </div>
                     <button onclick="createPermission()">Crear Permiso</button>
@@ -373,7 +374,7 @@
         };
 
         function getToken() {
-            return localStorage.getItem('jwtToken');
+            return localStorage.getItem('jwt_token');
         }
 
         async function apiCall(endpoint, method = 'GET', body = null) {

@@ -219,7 +219,7 @@ public class RbacService {
         if (!roleRepository.existsByName("ADMIN")) {
             Role adminRole = new Role();
             adminRole.setName("ADMIN");
-            adminRole.setDescription("Administrator with full access");
+            adminRole.setDescription("Administrador con acceso completo");
             roleRepository.save(adminRole);
             log.info("Created default ADMIN role");
         }
@@ -227,7 +227,7 @@ public class RbacService {
         if (!roleRepository.existsByName("USER")) {
             Role userRole = new Role();
             userRole.setName("USER");
-            userRole.setDescription("Regular user with limited access");
+            userRole.setDescription("Usuario regular con acceso limitado");
             roleRepository.save(userRole);
             log.info("Created default USER role");
         }

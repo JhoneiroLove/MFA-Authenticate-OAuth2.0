@@ -232,9 +232,10 @@
         <div class="user-info" id="userInfo">
             <p><strong>Email:</strong> <span id="userEmail">Cargando...</span></p>
             <p><strong>Nombre:</strong> <span id="userName">Cargando...</span></p>
+            <p><strong>Roles:</strong> <span id="userRoles">Cargando...</span></p>
         </div>
 
-        <button onclick="window.location.href='/rbac-admin.html'" style="margin-bottom: 10px; width: 100%;">Administración RBAC</button>
+        <button onclick="window.location.href='/rbac-admin.html'" id="adminButton" style="margin-bottom: 10px; width: 100%; display: none;">Administración</button>
         <button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
 
         <div class="mfa-section">
@@ -319,8 +320,10 @@
             const payload = JSON.parse(atob(savedToken.split('.')[1]));
             userEmail = payload.sub;
 
-            document.getElementById('userEmail').textContent = userEmail;
-            document.getElementById('userName').textContent = 'Usuario';
+
+            // Cargar perfil del usuario
+            await loadUserProfile();
+
 
             // Cargar estado de MFA
             await loadMfaStatus();
@@ -330,6 +333,33 @@
             logout();
         }
     });
+    async function loadUserProfile() {
+        try {
+            const response = await fetch('/api/user/profile', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                }
+            });
+
+            if (response.ok) {
+                const profile = await response.json();
+                document.getElementById('userEmail').textContent = profile.email || userEmail;
+                document.getElementById('userName').textContent = profile.name || 'Usuario';
+                document.getElementById('userRoles').textContent = profile.roles.join(', ');
+
+                // Mostrar botón de admin si tiene rol ADMIN
+                if (profile.roles.includes('ADMIN')) {
+                    document.getElementById('adminButton').style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.error('Error al cargar perfil:', error);
+            document.getElementById('userEmail').textContent = userEmail;
+            document.getElementById('userName').textContent = 'Usuario';
+            document.getElementById('userRoles').textContent = 'N/A';
+        }
+    }
+
 
     async function loadMfaStatus() {
         try {

@@ -1,5 +1,6 @@
 package com.security.mfaautenticate.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,6 +29,7 @@ public class Permission {
     @Enumerated(EnumType.STRING)
     private Operation operation;
 
+    @JsonBackReference("role-permissions")
     @ManyToMany(mappedBy = "permissions")
     private Set<Role> roles = new HashSet<>();
 }
